@@ -123,33 +123,7 @@ class TagParser:
         if not segments:
             segments.append(TextSegment(text=text.strip(), emotion=default_emotion))
 
-        # IMPORTANT STABILITY FIX:
-        # Extreme emotions (e.g. "excited" = high pitch) can crash the diffusion model
-        # when combined with expression tags like [laughter] or [sigh].
-        # We must isolate any [tag] into its own TextSegment with "neutral" emotion.
-        # This guarantees the expression is synthesized cleanly without pitch distortions.
-        final_segments: List[TextSegment] = []
-        
-        # Regex to match [tag]
-        expr_re = re.compile(r"(\[[a-z-]+\])")
-        
-        for seg in segments:
-            if not seg.text.strip():
-                continue
-                
-            parts = expr_re.split(seg.text)
-            for part in parts:
-                part = part.strip()
-                if not part:
-                    continue
-                if expr_re.match(part):
-                    # It's an expression tag like [laughter]. Force neutral emotion.
-                    final_segments.append(TextSegment(text=part, emotion="neutral"))
-                else:
-                    # Normal text. Keep original emotion.
-                    final_segments.append(TextSegment(text=part, emotion=seg.emotion))
-
-        return final_segments
+        return segments
 
     @staticmethod
     def has_tags(text: str) -> bool:

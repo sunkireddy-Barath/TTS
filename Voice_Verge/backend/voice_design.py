@@ -114,16 +114,24 @@ class VoiceDesignService:
             
             # 1. Resolve parameters for THIS specific chunk
             params = EmotionEngine.resolve(seg.emotion, gender, age)
-            instruct = EmotionEngine.build_instruct(gender, age, params, accent)
-            
-            # We strip trailing punctuation for isolated multi-segment generation so it doesn't leave gaps
-            seg_text = seg.text
             
             # STABILITY FIX: If the segment contains NO letters or numbers (e.g. it is just ","),
             # skip it. Generating pure punctuation crashes the diffusion model into static noise.
+            seg_text = seg.text
             import re
             if not re.search(r'[^\W_]', seg_text) and not re.search(r'\[[a-z-]+\]', seg_text):
                 continue
+                
+            # EXPRESSION STABILITY FIX:
+            # If the segment contains an expression tag (like [laughter] or [sigh]),
+            # we MUST strip extreme pitch modifiers (high pitch, low pitch). 
+            # Applying artificial pitch-stretching to a non-speech sound causes the vocoder 
+            # to crash into static. We keep the speed modifier, but reset pitch to neutral.
+            if re.search(r'\[[a-z-]+\]', seg_text):
+                params.pitch_hint = ""
+                params.style_hint = ""
+                
+            instruct = EmotionEngine.build_instruct(gender, age, params, accent)
             tags_to_verify = []
             if "[laughter]" in seg_text.lower(): tags_to_verify.append("[laughter]")
             if "[sigh]" in seg_text.lower(): tags_to_verify.append("[sigh]")

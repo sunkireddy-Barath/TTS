@@ -156,7 +156,6 @@ class VoiceCloneService:
             # Resolve emotion per segment
             params = EmotionEngine.resolve(seg.emotion, gender, age)
             # BUG FIX: Voice cloning mode does NOT support the 'instruct' parameter. 
-            # We strip trailing punctuation for isolated multi-segment generation so it doesn't leave gaps
             seg_text = seg.text
             
             # STABILITY FIX: If the segment contains NO letters or numbers (e.g. it is just ","),
@@ -164,6 +163,16 @@ class VoiceCloneService:
             import re
             if not re.search(r'[^\W_]', seg_text) and not re.search(r'\[[a-z-]+\]', seg_text):
                 continue
+                
+            # EXPRESSION STABILITY FIX:
+            # If the segment contains an expression tag (like [laughter] or [sigh]),
+            # we MUST strip extreme pitch modifiers (high pitch, low pitch). 
+            # Applying artificial pitch-stretching to a non-speech sound causes the vocoder 
+            # to crash into static. We keep the speed modifier, but reset pitch to neutral.
+            if re.search(r'\[[a-z-]+\]', seg_text):
+                params.pitch_hint = ""
+                params.style_hint = ""
+                
             instruct = ""
 
             tags_to_verify = []
