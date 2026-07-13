@@ -161,7 +161,7 @@ const VoiceClonePage: React.FC = () => {
           <div className="glass-card p-5">
             <div className="flex items-center justify-between mb-2">
               <label htmlFor="clone-text" className="field-label mb-0">
-                Target Text
+                {version === 3 ? 'Target Text (with Emotion Tags)' : 'Target Text'}
               </label>
               <span
                 className={`text-xs ${charCount > maxChars * 0.9 ? 'text-amber-400' : 'text-slate-600'}`}
@@ -172,20 +172,54 @@ const VoiceClonePage: React.FC = () => {
             <textarea
               id="clone-text"
               className="field-input resize-none"
-              rows={5}
-              placeholder="Type the text you want the cloned voice to speak in the target language…"
+              rows={version === 3 ? 12 : 5}
+              placeholder={
+                version === 3
+                  ? 'Write text with emotion tags for per-sentence control:\n\n<happy>\nI won the match today!\n</happy>\n\n<sad>\nBut my friend wasn\'t there to celebrate.\n</sad>\n\n<excited>\nWe play again tomorrow!\n</excited>\n\nSupported: <happy> <sad> <angry> <excited> <calm> <whisper>'
+                  : 'Type the text you want the cloned voice to speak in the target language…'
+              }
               value={text}
               maxLength={maxChars}
               onChange={(e) => setText(e.target.value)}
             />
-            <div className="mt-2 flex items-start gap-2 text-xs text-slate-500">
-              <Info size={12} className="mt-0.5 flex-shrink-0 text-brand-400" />
-              <span>
-                Example — Tamil:{' '}
-                <span className="text-slate-300 select-all">வணக்கம் நண்பர்களே</span>.
-                {' '}Write in the target language script for the most natural output.
-              </span>
-            </div>
+            
+            {version === 3 ? (
+              <div className="mt-3 space-y-2">
+                <div className="flex items-start gap-2 text-xs text-slate-500">
+                  <Info size={12} className="mt-0.5 flex-shrink-0 text-brand-400" />
+                  <span>
+                    Emotion tags: wrap each section in{' '}
+                    <code className="text-accent-400 bg-accent-500/10 px-1 rounded">&lt;emotion&gt;…&lt;/emotion&gt;</code>.
+                    Supported: <span className="text-slate-300">happy · sad · angry · excited · calm · whisper</span>
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-slate-500">
+                  <Info size={12} className="mt-0.5 flex-shrink-0 text-accent-400" />
+                  <div>
+                    <span className="text-slate-400">Expression tags (write directly in text):</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {['[laughter]', '[sigh]', '[confirmation-en]', '[question-en]', '[surprise-ah]', '[dissatisfaction-hnn]'].map((tag) => (
+                        <code
+                          key={tag}
+                          className="text-xs bg-white/5 border border-white/8 text-emerald-400 px-1.5 py-0.5 rounded"
+                        >
+                          {tag}
+                        </code>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 flex items-start gap-2 text-xs text-slate-500">
+                <Info size={12} className="mt-0.5 flex-shrink-0 text-brand-400" />
+                <span>
+                  Example — Tamil:{' '}
+                  <span className="text-slate-300 select-all">வணக்கம் நண்பர்களே</span>.
+                  {' '}Write in the target language script for the most natural output.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Target language */}
@@ -208,10 +242,12 @@ const VoiceClonePage: React.FC = () => {
             />
           </div>
 
-          {/* Emotion — shown for V1 and V2 (V3 rare for clone; kept simple) */}
-          <div className="glass-card p-5">
-            <EmotionPicker value={emotion} onChange={setEmotion} />
-          </div>
+          {/* Emotion — shown for V1 and V2 (V3 uses tags in text) */}
+          {version !== 3 && (
+            <div className="glass-card p-5">
+              <EmotionPicker value={emotion} onChange={setEmotion} />
+            </div>
+          )}
 
           {/* Expression — V2 only */}
           {version === 2 && (
