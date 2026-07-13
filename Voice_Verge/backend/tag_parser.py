@@ -62,13 +62,17 @@ class TagParser:
             # Allow users to type either <question_ah> or <question-ah>
             expr_pattern = expr.replace("_", "[-_]")
             
-            # Convert <giggle> -> [laughter] with STRICT space isolation.
-            # Spaces guarantee OmniVoice tokenizes it as a control token instead of a gibberish word.
-            text = re.sub(rf"<{expr_pattern}>", f" {tag} ", text, flags=re.IGNORECASE)
-            text = re.sub(rf"\[{expr_pattern}\]", f" {tag} ", text, flags=re.IGNORECASE)
+            # Convert <giggle> -> , [laughter] , with STRICT space isolation and punctuation.
+            # Commas force OmniVoice to pause slightly, isolating the token. This prevents
+            # the token from bleeding into word phonemes which causes severe glitching in
+            # non-English/non-Chinese languages.
+            text = re.sub(rf"<{expr_pattern}>", f" , {tag} , ", text, flags=re.IGNORECASE)
+            text = re.sub(rf"\[{expr_pattern}\]", f" , {tag} , ", text, flags=re.IGNORECASE)
             
         # Clean up any double spaces created by the isolation
         text = re.sub(r"\s+", " ", text).strip()
+        # Clean up redundant commas (e.g. "Hello! , [laughter]" -> "Hello! [laughter]")
+        text = re.sub(r"([.!?])\s*,\s*(\[[a-z-]+\])", r"\1 \2", text)
         return text
 
     @staticmethod
