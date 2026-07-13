@@ -156,10 +156,16 @@ class VoiceCloneService:
             # Resolve emotion per segment
             params = EmotionEngine.resolve(seg.emotion, gender, age)
             # BUG FIX: Voice cloning mode does NOT support the 'instruct' parameter. 
-            # Passing it causes OmniVoice to generate blank/static noise.
+            # We strip trailing punctuation for isolated multi-segment generation so it doesn't leave gaps
+            seg_text = seg.text
+            
+            # STABILITY FIX: If the segment contains NO letters or numbers (e.g. it is just ","),
+            # skip it. Generating pure punctuation crashes the diffusion model into static noise.
+            import re
+            if not re.search(r'[^\W_]', seg_text) and not re.search(r'\[[a-z-]+\]', seg_text):
+                continue
             instruct = ""
 
-            seg_text = seg.text
             tags_to_verify = []
             if "[laughter]" in seg_text.lower(): tags_to_verify.append("[laughter]")
             if "[sigh]" in seg_text.lower(): tags_to_verify.append("[sigh]")
