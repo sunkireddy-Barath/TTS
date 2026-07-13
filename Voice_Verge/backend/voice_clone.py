@@ -155,7 +155,9 @@ class VoiceCloneService:
 
             # Resolve emotion per segment
             params = EmotionEngine.resolve(seg.emotion, gender, age)
-            instruct = EmotionEngine.build_instruct(gender, age, params)
+            # BUG FIX: Voice cloning mode does NOT support the 'instruct' parameter. 
+            # Passing it causes OmniVoice to generate blank/static noise.
+            instruct = ""
 
             seg_text = seg.text
             tags_to_verify = []
