@@ -26,10 +26,12 @@ class AudioVerifier:
     @classmethod
     def _is_speech(cls, wav_path: str) -> float:
         cls.initialize()
-        waveform, sr = torchaudio.load(wav_path)
-        if sr != 16000:
-            resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=16000)
-            waveform = resampler(waveform)
+        
+        # FIX: torchaudio.load fails in Colab due to missing ffmpeg/sox backends.
+        # Use librosa to load and automatically resample to 16kHz safely.
+        import librosa
+        arr, sr = librosa.load(wav_path, sr=16000, mono=True)
+        waveform = torch.from_numpy(arr).unsqueeze(0)
         
         # AudioSet AST expects ~10 second inputs, we pad or truncate
         target_length = 16000 * 10
@@ -69,6 +71,7 @@ class AudioVerifier:
             
             return has_speech, score
         except Exception as e:
+            print(f"[AudioVerifier] ERROR running speech check: {e}")
             return True, 1.0 # Fail open so we don't crash the generation
         finally:
             try:
