@@ -1,6 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react'
-import { Upload, X, Mic, Loader2, Sparkles } from 'lucide-react'
-import { removeAudioNoise } from '../api'
+import { Upload, X, Mic } from 'lucide-react'
 
 interface AudioUploaderProps {
   value: File | null
@@ -47,22 +46,6 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({ value, onChange }) => {
     if (file) handleFile(file)
   }
 
-  const [cleaning, setCleaning] = useState(false)
-
-  const handleCleanAudio = async () => {
-    if (!value) return
-    setCleaning(true)
-    try {
-      const cleanedBlob = await removeAudioNoise(value)
-      const cleanedFile = new File([cleanedBlob], `cleaned_${value.name}`, { type: 'audio/wav' })
-      onChange(cleanedFile)
-    } catch (err: unknown) {
-      alert((err instanceof Error ? err.message : 'Failed to clean audio'))
-    } finally {
-      setCleaning(false)
-    }
-  }
-
   return (
     <div>
       <label className="field-label flex items-center gap-1.5">
@@ -102,27 +85,6 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({ value, onChange }) => {
               <audio controls src={audioUrl} className="w-full h-8" />
             </div>
           )}
-
-          {/* Remove Background Noise Button */}
-          <button
-            type="button"
-            onClick={handleCleanAudio}
-            disabled={cleaning}
-            className="mt-2 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all
-                       bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {cleaning ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Cleaning Audio...
-              </>
-            ) : (
-              <>
-                <Sparkles size={16} />
-                Remove Background Noise
-              </>
-            )}
-          </button>
         </div>
       ) : (
         /* Drop zone */

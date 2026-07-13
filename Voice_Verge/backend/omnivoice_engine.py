@@ -247,6 +247,12 @@ class OmniVoiceEngine:
         if max_val < 0.01:
             raise ValueError("OmniVoice generated blank audio (silence). Please try again.")
 
+        # STRICT RMS CHECK: Even if there is a loud "pop" (high max_val), if the average energy
+        # is virtually zero, the audio is practically blank. This guarantees NO blank audio.
+        rms = np.sqrt(np.mean(arr**2))
+        if rms < 0.002:
+            raise ValueError(f"OmniVoice generated nearly silent audio (RMS: {rms:.5f}). Please try again.")
+
         # Standard Peak Normalization: Safely scale audio to 95% of maximum peak
         # to avoid any hard clipping or distortion.
         if max_val > 0.001:
