@@ -49,16 +49,16 @@ class EmotionParams:
 # Core emotion map  (pitch_hint, style_hint, speed)
 # ---------------------------------------------------------------------------
 EMOTION_MAP: Dict[str, EmotionParams] = {
-    "neutral":   EmotionParams(pitch_hint="", style_hint="",          speed=0.85),
-    "happy":     EmotionParams(pitch_hint="", style_hint="happy",     speed=0.95),
-    "excited":   EmotionParams(pitch_hint="", style_hint="excited",   speed=1.05),
-    "sad":       EmotionParams(pitch_hint="", style_hint="sad",       speed=0.75),
-    "angry":     EmotionParams(pitch_hint="", style_hint="angry",     speed=1.00),
-    "calm":      EmotionParams(pitch_hint="", style_hint="calm",      speed=0.75),
-    "whisper":   EmotionParams(pitch_hint="", style_hint="whisper",   speed=0.75),
-    "fearful":   EmotionParams(pitch_hint="", style_hint="fearful",   speed=0.75),
-    "surprised": EmotionParams(pitch_hint="", style_hint="surprised", speed=0.90),
-    "disgusted": EmotionParams(pitch_hint="", style_hint="disgusted", speed=0.85),
+    "neutral":   EmotionParams(pitch_hint="",                style_hint="",        speed=0.85),
+    "happy":     EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=0.95),
+    "excited":   EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=1.05),
+    "sad":       EmotionParams(pitch_hint="low pitch",       style_hint="",        speed=0.75),
+    "angry":     EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=1.00),
+    "calm":      EmotionParams(pitch_hint="low pitch",       style_hint="",        speed=0.75),
+    "whisper":   EmotionParams(pitch_hint="",                style_hint="whisper", speed=0.75),
+    "fearful":   EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=0.75),
+    "surprised": EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=0.90),
+    "disgusted": EmotionParams(pitch_hint="low pitch",       style_hint="",        speed=0.85),
 }
 
 # ---------------------------------------------------------------------------
