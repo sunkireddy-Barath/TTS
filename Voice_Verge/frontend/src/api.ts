@@ -100,6 +100,22 @@ export async function generateVoiceClone(
   }
 }
 
+// ─── Utilities ────────────────────────────────────────────────────────────────
+export async function removeAudioNoise(file: File): Promise<Blob> {
+  const form = new FormData()
+  form.append('reference_audio', file)
+
+  try {
+    const res = await api.post('/api/remove-noise', form, {
+      responseType: 'blob',
+    })
+    return res.data as Blob
+  } catch (err) {
+    const msg = await extractErrorMessage(err)
+    throw new Error(msg)
+  }
+}
+
 // ─── Health ───────────────────────────────────────────────────────────────────
 export async function checkHealth(): Promise<{
   status: string

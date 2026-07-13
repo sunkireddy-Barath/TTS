@@ -271,6 +271,33 @@ async def voice_clone(
 
 
 # ---------------------------------------------------------------------------
+# Routes — Utilities
+# ---------------------------------------------------------------------------
+@app.post("/api/remove-noise")
+async def remove_noise(
+    reference_audio: UploadFile = File(...),
+):
+    """
+    Remove background noise from an uploaded audio file.
+    """
+    _validate_reference_audio(reference_audio)
+
+    ref_bytes = await reference_audio.read()
+    if not ref_bytes:
+        raise HTTPException(status_code=400, detail="Reference audio file is empty.")
+
+    logger.info("remove-noise | Processing audio, size=%d bytes", len(ref_bytes))
+
+    try:
+        from noise_reduction import apply_mossformer_enhancement
+        cleaned_wav = apply_mossformer_enhancement(ref_bytes, force_process=True)
+    except Exception as exc:
+        logger.exception("remove-noise failed")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    return _wav_response(cleaned_wav)
+
+# ---------------------------------------------------------------------------
 # Dev entry-point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
