@@ -48,13 +48,10 @@ def apply_mossformer_enhancement(
 
     try:
         if noisy:
-            print("[Noisereduce] Noisy audio detected. Applying noise reduction...")
+            print("[Noisereduce] Noisy audio detected. Bypassing spectral gating to prevent muting expressions.")
             arr_out, out_sr = librosa.load(io.BytesIO(audio_bytes), sr=None, mono=True)
-            
-            # Apply stationary noise reduction.
-            # stationary=True is CRITICAL. It only removes constant hiss/hum.
-            # If it is False, it will delete giggles, gasps, and shouts because they are non-stationary!
-            arr_out = nr.reduce_noise(y=arr_out, sr=out_sr, prop_decrease=0.8, stationary=True)
+            # We completely disable nr.reduce_noise here because calculating noise profiles 
+            # on short audio segments mathematically causes the entire speech/expression to be muted.
         else:
             print("[Noisereduce] Audio is clear. Bypassing noise reduction.")
             arr_out, out_sr = sf.read(io.BytesIO(audio_bytes))
