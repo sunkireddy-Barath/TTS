@@ -4,17 +4,7 @@ import numpy as np
 import librosa
 import soundfile as sf
 import tempfile
-import torch
-
-_df_model = None
-_df_state = None
-
-def init_df_model():
-    global _df_model, _df_state
-    if _df_model is None:
-        from df.enhance import init_df
-        print("[DeepFilterNet] Initializing model...")
-        _df_model, _df_state, _ = init_df()
+import noisereduce as nr
 
 def is_noisy(audio_bytes: bytes, threshold_db=-45.0) -> bool:
     """
@@ -47,42 +37,30 @@ def apply_mossformer_enhancement(
     force_process: bool = True
 ) -> bytes:
     """
-    Applies DeepFilterNet to remove background noise without affecting voice quality.
+    Applies Noisereduce (spectral gating) to remove background noise without affecting voice quality.
     (Kept function name as apply_mossformer_enhancement for backward compatibility)
     """
     noisy = force_process or is_noisy(audio_bytes, threshold_db=-45.0)
     
     if not noisy and not trim_silence:
-        print("[DeepFilterNet] Audio is clear and no silence trim requested. Bypassing.")
+        print("[Noisereduce] Audio is clear and no silence trim requested. Bypassing.")
         return audio_bytes
 
     try:
         if noisy:
-            print("[DeepFilterNet] Noisy audio detected. Applying noise reduction...")
-            init_df_model()
-            from df.enhance import enhance, load_audio
-
-            # Load audio using DeepFilterNet's loader to ensure correct SR
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f_in:
-                f_in.write(audio_bytes)
-                tmp_in = f_in.name
+            print("[Noisereduce] Noisy audio detected. Applying noise reduction...")
+            arr_out, out_sr = librosa.load(io.BytesIO(audio_bytes), sr=None, mono=True)
             
-            audio, _ = load_audio(tmp_in, sr=_df_state.sr())
-            enhanced_audio = enhance(_df_model, _df_state, audio)
-            
-            # The enhanced_audio is a torch tensor. Convert it to numpy array.
-            arr_out = enhanced_audio.squeeze().cpu().numpy()
-            out_sr = _df_state.sr()
-            
-            if os.path.exists(tmp_in): os.remove(tmp_in)
+            # Apply stationary noise reduction (prop_decrease controls how aggressive it is)
+            arr_out = nr.reduce_noise(y=arr_out, sr=out_sr, prop_decrease=0.8, stationary=False)
         else:
-            print("[DeepFilterNet] Audio is clear. Bypassing noise reduction.")
+            print("[Noisereduce] Audio is clear. Bypassing noise reduction.")
             arr_out, out_sr = sf.read(io.BytesIO(audio_bytes))
             if len(arr_out.shape) > 1:
                 arr_out = arr_out.mean(axis=1)
             
         if trim_silence:
-            print("[DeepFilterNet] Trimming blank silences...")
+            print("[Noisereduce] Trimming blank silences...")
             arr_out, _ = librosa.effects.trim(arr_out, top_db=40)
             
         if np.max(np.abs(arr_out)) < 1e-6:
@@ -93,5 +71,5 @@ def apply_mossformer_enhancement(
         return buf.getvalue()
         
     except Exception as e:
-        print(f"[DeepFilterNet] CRITICAL ERROR: {e}")
+        print(f"[Noisereduce] CRITICAL ERROR: {e}")
         return audio_bytes
