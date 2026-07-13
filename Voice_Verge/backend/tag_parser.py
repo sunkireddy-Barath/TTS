@@ -54,7 +54,10 @@ class TagParser:
 
     @staticmethod
     def _replace_inline_expressions(text: str) -> str:
-        """Replace inline <expression> tags with their OmniVoice [tag] equivalents."""
+        """
+        Converts inline expressions like <giggle> or [giggle] into their 
+        mapped OmniVoice tokens (e.g. [laughter]).
+        """
         for expr, tag in EXPRESSION_TAG_MAP.items():
             if not tag:
                 continue
@@ -62,17 +65,13 @@ class TagParser:
             # Allow users to type either <question_ah> or <question-ah>
             expr_pattern = expr.replace("_", "[-_]")
             
-            # Convert <giggle> -> , [laughter] , with STRICT space isolation and punctuation.
-            # Commas force OmniVoice to pause slightly, isolating the token. This prevents
-            # the token from bleeding into word phonemes which causes severe glitching in
-            # non-English/non-Chinese languages.
-            text = re.sub(rf"<{expr_pattern}>", f" , {tag} , ", text, flags=re.IGNORECASE)
-            text = re.sub(rf"\[{expr_pattern}\]", f" , {tag} , ", text, flags=re.IGNORECASE)
+            # Convert <giggle> -> [laughter] with spaces but NO COMMAS.
+            # Commas cause hard pauses which make the vocoder crash on non-speech sounds.
+            text = re.sub(rf"<{expr_pattern}>", f" {tag} ", text, flags=re.IGNORECASE)
+            text = re.sub(rf"\[{expr_pattern}\]", f" {tag} ", text, flags=re.IGNORECASE)
             
-        # Clean up any double spaces created by the isolation
+        # Remove double spaces.
         text = re.sub(r"\s+", " ", text).strip()
-        # Clean up redundant commas (e.g. "Hello! , [laughter]" -> "Hello! [laughter]")
-        text = re.sub(r"([.!?])\s*,\s*(\[[a-z-]+\])", r"\1 \2", text)
         return text
 
     @staticmethod
@@ -122,6 +121,22 @@ class TagParser:
         # Fallback: no tags found
         if not segments:
             segments.append(TextSegment(text=text.strip(), emotion=default_emotion))
+
+        # IMPORTANT STABILITY FIX:
+        # If the user typed an expression tag outside of an emotion tag (e.g. <happy>Hello</happy> <giggle>),
+        # the <giggle> becomes its own segment. But OmniVoice CANNOT synthesize an expression
+        # without surrounding phonemes (it just outputs a breath/silence).
+        # We MUST merge any segment that contains ONLY tags/punctuation into the PREVIOUS segment!
+        merged: List[TextSegment] = []
+        for seg in segments:
+            # Check if this segment contains any actual spoken words (letters/digits)
+            clean_text = re.sub(r'\[[a-z-]+\]', '', seg.text)
+            if not re.search(r'[^\W_]', clean_text) and merged:
+                # No spoken words! Append its text to the previous segment.
+                merged[-1].text += " " + seg.text.strip()
+            else:
+                merged.append(seg)
+        segments = merged
 
         return segments
 

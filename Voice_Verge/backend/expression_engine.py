@@ -262,8 +262,8 @@ class ExpressionEngine:
         elif has_clause:
             active_set = CLAUSE_PUNCT
         else:
-            # No punctuation — append tag to end WITH a comma pause!
-            return f"{text} , {tag}"
+            # No punctuation — append tag to end WITH NO COMMA PAUSE!
+            return f"{text} {tag}"
 
         return cls._inject_after_all(text, active_set, tag)
 
@@ -286,8 +286,8 @@ class ExpressionEngine:
                 j = i + 1
                 while j < len(text) and text[j] == ' ':
                     j += 1
-                # Insert isolated tag
-                result.append(f" {tag} , ")
+                # Insert isolated tag with spaces (no commas)
+                result.append(f" {tag} ")
                 i = j
             else:
                 i += 1
