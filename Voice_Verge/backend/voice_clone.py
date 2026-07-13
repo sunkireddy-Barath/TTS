@@ -126,8 +126,8 @@ class VoiceCloneService:
             num_step=num_step,
         )
 
-        # Apply MossFormer2 to the generated output to remove trailing silence
-        return apply_mossformer_enhancement(out_bytes, force_process=False)
+        # Apply MossFormer2 to the generated output to remove trailing silence and gentle hiss
+        return apply_mossformer_enhancement(out_bytes, force_process=True)
 
     def _generate_multi_segment(
         self,

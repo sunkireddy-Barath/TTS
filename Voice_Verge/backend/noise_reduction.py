@@ -52,7 +52,8 @@ def apply_mossformer_enhancement(
             arr_out, out_sr = librosa.load(io.BytesIO(audio_bytes), sr=None, mono=True)
             
             # Apply stationary noise reduction (prop_decrease controls how aggressive it is)
-            arr_out = nr.reduce_noise(y=arr_out, sr=out_sr, prop_decrease=0.8, stationary=False)
+            # 0.35 is gentle enough to remove OmniVoice static hiss without destroying emotions
+            arr_out = nr.reduce_noise(y=arr_out, sr=out_sr, prop_decrease=0.35, stationary=False)
         else:
             print("[Noisereduce] Audio is clear. Bypassing noise reduction.")
             arr_out, out_sr = sf.read(io.BytesIO(audio_bytes))
