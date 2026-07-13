@@ -262,8 +262,8 @@ class ExpressionEngine:
         elif has_clause:
             active_set = CLAUSE_PUNCT
         else:
-            # No punctuation — append tag to end
-            return f"{text} {tag}"
+            # No punctuation — append tag to end WITH a comma pause!
+            return f"{text} , {tag}"
 
         return cls._inject_after_all(text, active_set, tag)
 
@@ -276,23 +276,18 @@ class ExpressionEngine:
         """
         Rebuild *text* inserting *tag* immediately after every character
         that is in *punct_set*.
-
-        Spacing: one space before the tag, one space after — any existing
-        whitespace immediately after the punctuation is collapsed to one
-        space so we don't produce double-spaces.
         """
-        result: List[str] = []
+        result: list[str] = []
         i = 0
         while i < len(text):
             ch = text[i]
             result.append(ch)
             if ch in punct_set:
-                # Skip any whitespace that already follows this punctuation
                 j = i + 1
                 while j < len(text) and text[j] == ' ':
                     j += 1
-                # Insert tag, then continue from j (non-space char or end)
-                result.append(f" {tag} ")
+                # Insert isolated tag
+                result.append(f" {tag} , ")
                 i = j
             else:
                 i += 1
