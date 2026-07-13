@@ -145,7 +145,6 @@ class VoiceDesignService:
                     speed=params.speed,
                     num_step=num_step,
                 )
-
                 is_valid, current_score = AudioVerifier.verify_expression(wav_bytes, tags_to_verify)
                 
                 if current_score > best_score:

@@ -51,13 +51,13 @@ class EmotionParams:
 EMOTION_MAP: Dict[str, EmotionParams] = {
     "neutral":   EmotionParams(pitch_hint="",                style_hint="",        speed=0.85),
     "happy":     EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=0.95),
-    "excited":   EmotionParams(pitch_hint="very high pitch", style_hint="",        speed=1.05),
+    "excited":   EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=1.05),
     "sad":       EmotionParams(pitch_hint="low pitch",       style_hint="",        speed=0.75),
     "angry":     EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=1.00),
     "calm":      EmotionParams(pitch_hint="low pitch",       style_hint="",        speed=0.75),
     "whisper":   EmotionParams(pitch_hint="",                style_hint="whisper", speed=0.75),
     "fearful":   EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=0.75),
-    "surprised": EmotionParams(pitch_hint="very high pitch", style_hint="",        speed=0.90),
+    "surprised": EmotionParams(pitch_hint="high pitch",      style_hint="",        speed=0.90),
     "disgusted": EmotionParams(pitch_hint="low pitch",       style_hint="",        speed=0.85),
 }
 
