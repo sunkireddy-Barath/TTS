@@ -87,8 +87,8 @@ class VoiceDesignService:
         out_bytes = self._generate_multi_segment(
             final_text, gender, age, accent, emotion, num_step
         )
-        # Apply MossFormer2 to the generated output to remove trailing silence and gentle hiss
-        return apply_mossformer_enhancement(out_bytes, force_process=True)
+        # Apply gentle post-processing (no silence trimming — expressions are short and will be cut!)
+        return apply_mossformer_enhancement(out_bytes, trim_silence=False, force_process=False)
 
     def _generate_multi_segment(
         self,

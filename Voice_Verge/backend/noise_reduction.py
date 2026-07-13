@@ -59,8 +59,10 @@ def apply_mossformer_enhancement(
                 arr_out = arr_out.mean(axis=1)
             
         if trim_silence:
-            print("[Noisereduce] Trimming blank silences...")
-            arr_out, _ = librosa.effects.trim(arr_out, top_db=40)
+            print("[Noisereduce] Trimming only hard leading/trailing silences (top_db=20)...")
+            # top_db=20 is gentle — it only removes near-total silence, not soft expression sounds.
+            # Aggressive values like top_db=40 trim sighs, laughs and whispers away completely.
+            arr_out, _ = librosa.effects.trim(arr_out, top_db=20)
             
         if np.max(np.abs(arr_out)) < 1e-6:
             return audio_bytes
