@@ -87,9 +87,8 @@ class VoiceDesignService:
         out_bytes = self._generate_multi_segment(
             final_text, gender, age, accent, emotion, num_step
         )
-        # Apply MossFormer2 to the generated output to remove any generation noise and trailing silence
-        # Force process to ensure blank voice remover runs
-        return apply_mossformer_enhancement(out_bytes, force_process=True)
+        # Apply MossFormer2 to the generated output to remove trailing silence
+        return apply_mossformer_enhancement(out_bytes, force_process=False)
 
     def _generate_multi_segment(
         self,

@@ -34,7 +34,7 @@ def is_noisy(audio_bytes: bytes, threshold_db=-45.0) -> bool:
 def apply_mossformer_enhancement(
     audio_bytes: bytes,
     trim_silence: bool = True,
-    force_process: bool = True
+    force_process: bool = False
 ) -> bytes:
     """
     Applies Noisereduce (spectral gating) to remove background noise without affecting voice quality.
