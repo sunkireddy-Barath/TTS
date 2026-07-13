@@ -7,11 +7,11 @@
 | Feature | Description |
 |---|---|
 | 🎨 Voice Design | Generate speech with language, gender, age, emotion controls |
-| 🎭 Cross-Lingual Cloning | Clone any voice across 100+ languages |
-| 💛 Emotion Engine | 10 emotions mapped to pitch/energy/style — invisible to users |
+| Cross-Lingual Cloning | Clone any voice across 100+ languages |
+| Emotion Engine | 10 emotions mapped to pitch/energy/style — invisible to users |
 | ✨ Expression Engine | Giggle, Sigh, Question, Surprise, Dissatisfaction — auto-injected tags |
-| 🏷️ Tag Parser | Version 3 per-sentence emotion markup |
-| 🌍 100+ Languages | Grouped: English Accents · Indian Languages · Foreign Languages |
+| Tag Parser | Version 3 per-sentence emotion markup |
+| 100+ Languages | Grouped: English Accents · Indian Languages · Foreign Languages |
 
 ---
 
@@ -20,39 +20,39 @@
 ```
 Voice_Verge/
 ├── backend/
-│   ├── main.py                 ← FastAPI application (all endpoints)
-│   ├── omnivoice_engine.py     ← OmniVoice model loader + inference
-│   ├── emotion_engine.py       ← Emotion → pitch/energy/style mapping
-│   ├── expression_engine.py    ← Expression → OmniVoice tag injection
-│   ├── tag_parser.py           ← Version 3 emotion tag parser
-│   ├── language_router.py      ← 100+ language catalogue + code mapping
-│   ├── voice_design.py         ← Voice Design orchestration service
-│   ├── voice_clone.py          ← Voice Clone orchestration service
-│   └── requirements.txt
+│ ├── main.py       ← FastAPI application (all endpoints)
+│ ├── omnivoice_engine.py   ← OmniVoice model loader + inference
+│ ├── emotion_engine.py   ← Emotion → pitch/energy/style mapping
+│ ├── expression_engine.py  ← Expression → OmniVoice tag injection
+│ ├── tag_parser.py     ← Version 3 emotion tag parser
+│ ├── language_router.py  ← 100+ language catalogue + code mapping
+│ ├── voice_design.py   ← Voice Design orchestration service
+│ ├── voice_clone.py    ← Voice Clone orchestration service
+│ └── requirements.txt
 ├── frontend/
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   ├── index.css           ← Design system (glassmorphism + animations)
-│   │   ├── constants.ts        ← All shared data (languages, emotions, etc.)
-│   │   ├── api.ts              ← API service layer (axios)
-│   │   ├── components/
-│   │   │   ├── Navbar.tsx
-│   │   │   ├── AudioPlayer.tsx
-│   │   │   ├── AudioUploader.tsx
-│   │   │   ├── EmotionPicker.tsx
-│   │   │   ├── ExpressionPicker.tsx
-│   │   │   ├── GenderAgePicker.tsx
-│   │   │   ├── LanguageSelector.tsx
-│   │   │   └── VersionSwitcher.tsx
-│   │   └── pages/
-│   │       ├── VoiceDesignPage.tsx
-│   │       └── VoiceClonePage.tsx
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── tailwind.config.js
-│   └── .env.example
-└── OmniVoice_Studio.ipynb      ← Google Colab notebook (12 cells)
+│ ├── src/
+│ │ ├── App.tsx
+│ │ ├── main.tsx
+│ │ ├── index.css     ← Design system (glassmorphism + animations)
+│ │ ├── constants.ts    ← All shared data (languages, emotions, etc.)
+│ │ ├── api.ts      ← API service layer (axios)
+│ │ ├── components/
+│ │ │ ├── Navbar.tsx
+│ │ │ ├── AudioPlayer.tsx
+│ │ │ ├── AudioUploader.tsx
+│ │ │ ├── EmotionPicker.tsx
+│ │ │ ├── ExpressionPicker.tsx
+│ │ │ ├── GenderAgePicker.tsx
+│ │ │ ├── LanguageSelector.tsx
+│ │ │ └── VersionSwitcher.tsx
+│ │ └── pages/
+│ │   ├── VoiceDesignPage.tsx
+│ │   └── VoiceClonePage.tsx
+│ ├── package.json
+│ ├── vite.config.ts
+│ ├── tailwind.config.js
+│ └── .env.example
+└── OmniVoice_Studio.ipynb  ← Google Colab notebook (12 cells)
 ```
 
 ---
@@ -66,9 +66,9 @@ Voice_Verge/
 3. Run all cells top-to-bottom
 4. Copy the **ngrok public URL** from Cell 12
 5. Set it in `frontend/.env.local`:
-   ```
-   VITE_API_BASE=https://xxxx.ngrok.io
-   ```
+ ```
+ VITE_API_BASE=https://xxxx.ngrok.io
+ ```
 6. Start the frontend locally
 
 ### Option B: Local Development
