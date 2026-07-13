@@ -123,22 +123,49 @@ class TagParser:
             segments.append(TextSegment(text=text.strip(), emotion=default_emotion))
 
         # IMPORTANT STABILITY FIX:
-        # If the user typed an expression tag outside of an emotion tag (e.g. <happy>Hello</happy> <giggle>),
-        # the <giggle> becomes its own segment. But OmniVoice CANNOT synthesize an expression
-        # without surrounding phonemes (it just outputs a breath/silence).
-        # We MUST merge any segment that contains ONLY tags/punctuation into the PREVIOUS segment!
-        merged: List[TextSegment] = []
+        # 1. Tags MUST be in their own segment with "neutral" emotion. If they share a segment
+        #    with extreme pitch (like "high pitch" for happy), the vocoder crashes into static.
+        # 2. Tags MUST have at least one spoken phoneme in their segment. If they are alone,
+        #    the model generates a silent breath. We solve this by injecting a natural "anchor word".
+        
+        anchor_map = {
+            "[laughter]": "ha ha",
+            "[sigh]": "ah",
+            "[surprise-ah]": "oh",
+            "[surprise-oh]": "oh",
+            "[surprise-wa]": "wa",
+            "[surprise-yo]": "yo",
+            "[question-en]": "hmm",
+            "[question-ah]": "ah",
+            "[question-oh]": "oh",
+            "[question-ei]": "ei",
+            "[question-yi]": "yi",
+            "[dissatisfaction-hnn]": "ugh",
+            "[confirmation-en]": "mhm",
+        }
+        
+        final_segments: List[TextSegment] = []
+        expr_re = re.compile(r"(\[[a-z-]+\])")
+        
         for seg in segments:
-            # Check if this segment contains any actual spoken words (letters/digits)
-            clean_text = re.sub(r'\[[a-z-]+\]', '', seg.text)
-            if not re.search(r'[^\W_]', clean_text) and merged:
-                # No spoken words! Append its text to the previous segment.
-                merged[-1].text += " " + seg.text.strip()
-            else:
-                merged.append(seg)
-        segments = merged
+            if not seg.text.strip():
+                continue
+                
+            parts = expr_re.split(seg.text)
+            for part in parts:
+                part = part.strip()
+                if not part:
+                    continue
+                if expr_re.match(part):
+                    # It's an expression tag. Inject anchor phonemes and force neutral emotion.
+                    anchor = anchor_map.get(part, "ah")
+                    anchored_text = f"{anchor} {part}"
+                    final_segments.append(TextSegment(text=anchored_text, emotion="neutral"))
+                else:
+                    # Normal text. Keep original emotion.
+                    final_segments.append(TextSegment(text=part, emotion=seg.emotion))
 
-        return segments
+        return final_segments
 
     @staticmethod
     def has_tags(text: str) -> bool:
