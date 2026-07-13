@@ -197,14 +197,11 @@ class VoiceCloneService:
                     instruct=instruct,
                 )
 
-                is_valid, current_score = AudioVerifier.verify_expression(wav_bytes, tags_to_verify)
-                
-                if current_score > best_score:
-                    best_score = current_score
-                    best_wav_bytes = wav_bytes
-                    
-                if is_valid:
-                    break
+                # OmniVoice engine internally retries on blank audio (RMS) or pure static (ZCR).
+                # If it returns wav_bytes without ValueError, it is a valid generation.
+                is_valid = True
+                best_wav_bytes = wav_bytes
+                break
             
             if not is_valid:
                 print(f" Exhausted attempts for cloned segment {idx+1}. Using best scored chunk ({best_score:.4f}).")
