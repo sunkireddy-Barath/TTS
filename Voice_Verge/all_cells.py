@@ -245,8 +245,25 @@ else:
     print(f'\nModel downloaded: {path}')
     print(f'Total size: {total_gb:.2f} GB')
   except Exception as e:
-    print(f'\nDownload failed: {e}')
-    raise
+    print(f'\nhf_transfer failed or rate-limited: {e}')
+    print('Falling back to standard HuggingFace downloader (more stable)...')
+    os.environ['HF_HUB_ENABLE_HF_TRANSFER'] = '0'
+    try:
+      path = snapshot_download(
+        repo_id=MODEL_ID,
+        cache_dir=CHECKPOINT_DIR,
+        ignore_patterns=['*.msgpack', '*.h5', 'flax_model*', 'tf_model*'],
+      )
+      total_gb = sum(
+        os.path.getsize(os.path.join(dp, f))
+        for dp, _, files in os.walk(path)
+        for f in files
+      ) / 1e9
+      print(f'\nModel downloaded: {path}')
+      print(f'Total size: {total_gb:.2f} GB')
+    except Exception as e2:
+      print(f'\nDownload completely failed: {e2}')
+      raise
 
 print('\nCell 4 complete.')
 
