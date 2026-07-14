@@ -35,7 +35,7 @@ const V3_EXPRESSION_TAGS = [
 ]
 
 const VoiceDesignPage: React.FC = () => {
-  const [version, setVersion]     = useState<AppVersion>(2)
+  const [version, setVersion]     = useState<AppVersion>(1)
   const [text, setText]           = useState('')
   const [language, setLanguage]   = useState('en-US')
   const [gender, setGender]       = useState('neutral')

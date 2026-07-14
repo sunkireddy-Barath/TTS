@@ -11,7 +11,7 @@ import AudioUploader from '../components/AudioUploader'
 import VersionSwitcher from '../components/VersionSwitcher'
 
 const VoiceClonePage: React.FC = () => {
-  const [version, setVersion]           = useState<AppVersion>(2)
+  const [version, setVersion]           = useState<AppVersion>(1)
   const [referenceAudio, setReferenceAudio] = useState<File | null>(null)
   const [refText, setRefText]           = useState('')
   const [text, setText]                 = useState('')
