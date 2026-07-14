@@ -2,19 +2,32 @@
 tag_parser.py
 Parses Version-3 advanced emotion tag markup from user text.
 
-Supported tags:
+Supported emotion tags (V3 inline):
     <happy> … </happy>
     <sad>   … </sad>
     <angry> … </angry>
     <excited> … </excited>
     <calm>  … </calm>
     <whisper> … </whisper>
+    <neutral> … </neutral>
+    <fearful> … </fearful>
+    <surprised> … </surprised>
+    <disgusted> … </disgusted>
 
-Output: list of TextSegment objects, each carrying its own emotion.
+Supported expression inline tags (V3 inline, converted to OmniVoice tokens):
+    <laugh> / <giggle> / <laughter>  → [laughter]
+    <sigh>                           → [sigh]
+    <surprise> / <gasp>              → [surprise-ah]
+    <question>                       → [question-en]
+    <dissatisfaction>                → [dissatisfaction-hnn]
+    <confirmation>                   → [confirmation-en]
+
+Output: list of TextSegment objects, each carrying its own emotion and
+        an `is_expression_segment` flag so callers can choose a clean instruct.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 from expression_engine import EXPRESSION_TAG_MAP
@@ -33,12 +46,23 @@ _TAG_RE = re.compile(
     re.DOTALL | re.IGNORECASE,
 )
 
+# ── Expression-only segment detector ─────────────────────────────────────────
+# Matches: optional anchor word(s) followed by a single [xxx-yyy] token.
+# Examples:  "ha ha [laughter]"  "ah [sigh]"  "[laughter]"
+_EXPR_ONLY_RE = re.compile(r'^\s*(?:[a-z][\w\s]*)?\[[a-z][a-z-]*\]\s*$', re.IGNORECASE)
+
+
+def is_expression_only(text: str) -> bool:
+    """Return True if *text* is purely an anchor word + one expression token."""
+    return bool(_EXPR_ONLY_RE.match(text.strip()))
+
 
 @dataclass
 class TextSegment:
     """A single segment of text with its associated emotion."""
     text: str
     emotion: str = "neutral"
+    is_expression_segment: bool = False  # True → caller should use gender-only instruct
 
 
 class TagParser:
@@ -55,21 +79,43 @@ class TagParser:
     @staticmethod
     def _replace_inline_expressions(text: str) -> str:
         """
-        Converts inline expressions like <giggle> or [giggle] into their 
-        mapped OmniVoice tokens (e.g. [laughter]).
+        Converts inline expression tags like <giggle>, <laugh>, [giggle] into
+        their mapped OmniVoice tokens (e.g. [laughter]).
+
+        This handles BOTH the standard EXPRESSION_TAG_MAP keys AND common
+        user-friendly aliases so V3 text like "<laugh>ha</laugh>" works naturally.
         """
+        # Extra user-friendly aliases not in the tag map
+        EXTRA_ALIASES = {
+            "laugh":          "[laughter]",
+            "giggle":         "[laughter]",
+            "laughter":       "[laughter]",
+            "sigh":           "[sigh]",
+            "gasp":           "[surprise-ah]",
+            "surprise":       "[surprise-ah]",
+            "surprised":      "[surprise-ah]",
+            "question":       "[question-en]",
+            "dissatisfaction":"[dissatisfaction-hnn]",
+            "confirmation":   "[confirmation-en]",
+        }
+
+        # Merge with the canonical map (canonical takes precedence for mapped keys)
+        combined = dict(EXTRA_ALIASES)
         for expr, tag in EXPRESSION_TAG_MAP.items():
+            if tag:
+                combined[expr] = tag
+
+        for expr, tag in combined.items():
             if not tag:
                 continue
-            
             # Allow users to type either <question_ah> or <question-ah>
             expr_pattern = expr.replace("_", "[-_]")
-            
-            # Convert <giggle> -> [laughter] with spaces but NO COMMAS.
+
+            # Convert <giggle> → [laughter] with spaces but NO COMMAS.
             # Commas cause hard pauses which make the vocoder crash on non-speech sounds.
             text = re.sub(rf"<{expr_pattern}>", f" {tag} ", text, flags=re.IGNORECASE)
             text = re.sub(rf"\[{expr_pattern}\]", f" {tag} ", text, flags=re.IGNORECASE)
-            
+
         # Remove double spaces.
         text = re.sub(r"\s+", " ", text).strip()
         return text
@@ -80,7 +126,8 @@ class TagParser:
         Parse text containing optional emotion tags and inline expression tags.
 
         If no emotion tags are found, the entire text is returned as a single
-        segment with the default_emotion. Expression tags are converted to OmniVoice native tags.
+        segment with the default_emotion. Expression tags are converted to OmniVoice
+        native tokens.
 
         Parameters
         ----------
@@ -93,6 +140,8 @@ class TagParser:
         -------
         List[TextSegment]
             Ordered list of segments with emotions assigned.
+            Each segment with is_expression_segment=True contains ONLY an
+            anchor word + one OmniVoice expression token.
         """
         segments: List[TextSegment] = []
         cursor = 0
@@ -122,48 +171,66 @@ class TagParser:
         if not segments:
             segments.append(TextSegment(text=text.strip(), emotion=default_emotion))
 
-        # IMPORTANT STABILITY FIX:
-        # 1. Tags MUST be in their own segment with "neutral" emotion. If they share a segment
-        #    with extreme pitch (like "high pitch" for happy), the vocoder crashes into static.
-        # 2. Tags MUST have at least one spoken phoneme in their segment. If they are alone,
-        #    the model generates a silent breath. We solve this by injecting a natural "anchor word".
-        
+        # ── Expression Segment Isolation ─────────────────────────────────────
+        # CRITICAL STABILITY RULES:
+        # 1. Expression tokens MUST be in their own segment with neutral emotion
+        #    AND gender-only instruct. Pitch hints (e.g. "high pitch") cause blank
+        #    or noisy audio when mixed with [laughter] / [sigh] / [surprise-ah].
+        # 2. Expression tokens MUST have at least one spoken phoneme (anchor word)
+        #    before the token. Without it, the model generates silent breath.
+        #
+        # anchor_map: maps each token to its most natural-sounding anchor phoneme.
         anchor_map = {
-            "[laughter]": "ha ha",
-            "[sigh]": "ah",
-            "[surprise-ah]": "oh",
-            "[surprise-oh]": "oh",
-            "[surprise-wa]": "wa",
-            "[surprise-yo]": "yo",
-            "[question-en]": "hmm",
-            "[question-ah]": "ah",
-            "[question-oh]": "oh",
-            "[question-ei]": "ei",
-            "[question-yi]": "yi",
-            "[dissatisfaction-hnn]": "ugh",
-            "[confirmation-en]": "mhm",
+            "[laughter]":           "ha ha",
+            "[sigh]":               "ah",
+            "[surprise-ah]":        "oh",
+            "[surprise-oh]":        "oh",
+            "[surprise-wa]":        "wa",
+            "[surprise-yo]":        "yo",
+            "[question-en]":        "hmm",
+            "[question-ah]":        "ah",
+            "[question-oh]":        "oh",
+            "[question-ei]":        "ei",
+            "[question-yi]":        "yi",
+            "[dissatisfaction-hnn]":"ugh",
+            "[confirmation-en]":    "mhm",
         }
-        
+
         final_segments: List[TextSegment] = []
-        expr_re = re.compile(r"(\[[a-z-]+\])")
-        
+        expr_re = re.compile(r"(\[[a-z][a-z-]*\])")
+
         for seg in segments:
             if not seg.text.strip():
                 continue
-                
+
             parts = expr_re.split(seg.text)
             for part in parts:
                 part = part.strip()
                 if not part:
                     continue
                 if expr_re.match(part):
-                    # It's an expression tag. Inject anchor phonemes and force neutral emotion.
+                    # ── Expression token ──────────────────────────────────────
+                    # Always force:
+                    #   emotion = "neutral"
+                    #   is_expression_segment = True
+                    #   text = anchor_word + [token]
                     anchor = anchor_map.get(part, "ah")
                     anchored_text = f"{anchor} {part}"
-                    final_segments.append(TextSegment(text=anchored_text, emotion="neutral"))
+                    final_segments.append(TextSegment(
+                        text=anchored_text,
+                        emotion="neutral",
+                        is_expression_segment=True,
+                    ))
                 else:
-                    # Normal text. Keep original emotion.
-                    final_segments.append(TextSegment(text=part, emotion=seg.emotion))
+                    # ── Normal speech text ────────────────────────────────────
+                    # STABILITY FIX: skip pure punctuation segments.
+                    if not re.search(r'[\w\u0080-\uFFFF]', part):
+                        continue
+                    final_segments.append(TextSegment(
+                        text=part,
+                        emotion=seg.emotion,
+                        is_expression_segment=False,
+                    ))
 
         return final_segments
 
@@ -173,7 +240,8 @@ class TagParser:
         if bool(_TAG_RE.search(text)):
             return True
         for expr, tag in EXPRESSION_TAG_MAP.items():
-            if not tag: continue
+            if not tag:
+                continue
             expr_pattern = expr.replace("_", "[-_]")
             if re.search(rf"<{expr_pattern}>", text, flags=re.IGNORECASE) or \
                re.search(rf"\[{expr_pattern}\]", text, flags=re.IGNORECASE):
@@ -190,12 +258,13 @@ class TagParser:
     def strip_all_tags(text: str) -> str:
         """Remove all emotion tags and expression tags from *text*."""
         result = _TAG_RE.sub(lambda m: m.group("content").strip(), text)
-        
+
         for expr, tag in EXPRESSION_TAG_MAP.items():
-            if not tag: continue
+            if not tag:
+                continue
             expr_pattern = expr.replace("_", "[-_]")
             result = re.sub(rf"<{expr_pattern}>", "", result, flags=re.IGNORECASE)
             result = re.sub(rf"\[{expr_pattern}\]", "", result, flags=re.IGNORECASE)
-            
+
         result = re.sub(r"\s+", " ", result).strip()
         return result

@@ -40,7 +40,6 @@ const GenderAgePicker: React.FC<GenderAgePickerProps> = ({
                   }
                 `}
               >
-                <span className="text-sm">{g.icon}</span>
                 {g.label}
               </button>
             )

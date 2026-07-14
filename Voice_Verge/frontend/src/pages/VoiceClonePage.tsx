@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { GitMerge, AlertCircle, Loader2, ArrowRight, Info } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { type AppVersion } from '../constants'
 import { generateVoiceClone } from '../api'
 import LanguageSelector from '../components/LanguageSelector'
@@ -79,7 +79,7 @@ const VoiceClonePage: React.FC = () => {
             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)' }}
           >
-            <GitMerge size={20} className="text-white" />
+            <span className="text-white font-bold text-xl">VC</span>
           </div>
           <h1 className="font-display text-3xl font-bold text-gradient">
             Cross-Lingual Voice Cloning
@@ -107,15 +107,14 @@ const VoiceClonePage: React.FC = () => {
                 {label}
               </div>
               {idx < arr.length - 1 && (
-                <ArrowRight size={12} className="text-slate-600 hidden sm:block" />
+                <span className="text-slate-600 hidden sm:block mx-2">--&gt;</span>
               )}
             </React.Fragment>
           ))}
-          <ArrowRight size={12} className="text-slate-600 hidden sm:block" />
+          <span className="text-slate-600 hidden sm:block mx-2">--&gt;</span>
           <div className="flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-emerald-600/30 text-emerald-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
-              ✓
-            </span>
+              OK
             Same voice · New language
           </div>
         </div>
@@ -149,7 +148,7 @@ const VoiceClonePage: React.FC = () => {
               onChange={(e) => setRefText(e.target.value)}
             />
             <div className="mt-1 flex items-start gap-2 text-xs text-slate-500">
-              <Info size={12} className="mt-0.5 flex-shrink-0 text-emerald-400" />
+              <span className="mt-0.5 flex-shrink-0 text-emerald-400 font-bold">i</span>
               <span>
                 Providing the transcript improves cloning accuracy.
                 If left blank, VoiceX uses Whisper ASR to auto-transcribe.
@@ -186,7 +185,7 @@ const VoiceClonePage: React.FC = () => {
             {version === 3 ? (
               <div className="mt-3 space-y-2">
                 <div className="flex items-start gap-2 text-xs text-slate-500">
-                  <Info size={12} className="mt-0.5 flex-shrink-0 text-brand-400" />
+                  <span className="mt-0.5 flex-shrink-0 text-brand-400 font-bold">i</span>
                   <span>
                     Emotion tags: wrap each section in{' '}
                     <code className="text-accent-400 bg-accent-500/10 px-1 rounded">&lt;emotion&gt;…&lt;/emotion&gt;</code>.
@@ -194,11 +193,11 @@ const VoiceClonePage: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-start gap-2 text-xs text-slate-500">
-                  <Info size={12} className="mt-0.5 flex-shrink-0 text-accent-400" />
+                  <span className="mt-0.5 flex-shrink-0 text-accent-400 font-bold">i</span>
                   <div>
                     <span className="text-slate-400">Expression tags (write directly in text):</span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {['[laughter]', '[sigh]', '[confirmation-en]', '[question-en]', '[surprise-ah]', '[dissatisfaction-hnn]'].map((tag) => (
+                      {['[laughter]', '[sigh]', '[confirmation-en]', '[question-en]', '[question-ah]', '[question-oh]', '[question-ei]', '[question-yi]', '[surprise-ah]', '[surprise-oh]', '[surprise-wa]', '[surprise-yo]', '[dissatisfaction-hnn]'].map((tag) => (
                         <code
                           key={tag}
                           className="text-xs bg-white/5 border border-white/8 text-emerald-400 px-1.5 py-0.5 rounded"
@@ -212,7 +211,7 @@ const VoiceClonePage: React.FC = () => {
               </div>
             ) : (
               <div className="mt-2 flex items-start gap-2 text-xs text-slate-500">
-                <Info size={12} className="mt-0.5 flex-shrink-0 text-brand-400" />
+                <span className="mt-0.5 flex-shrink-0 text-brand-400 font-bold">i</span>
                 <span>
                   Example — Tamil:{' '}
                   <span className="text-slate-300 select-all">வணக்கம் நண்பர்களே</span>.
@@ -259,7 +258,7 @@ const VoiceClonePage: React.FC = () => {
           {/* Error */}
           {error && (
             <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/30 bg-red-500/10 animate-slide-up">
-              <AlertCircle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
+              <span className="text-red-400 mt-0.5 flex-shrink-0 font-bold">!</span>
               <p className="text-sm text-red-300">{error}</p>
             </div>
           )}
@@ -285,7 +284,6 @@ const VoiceClonePage: React.FC = () => {
               </>
             ) : (
               <>
-                <GitMerge size={18} />
                 Clone &amp; Generate
               </>
             )}
@@ -340,24 +338,24 @@ const VoiceClonePage: React.FC = () => {
             <p className="field-label mb-3">Quick Tips</p>
             <ul className="space-y-2 text-xs text-slate-400">
               <li className="flex items-start gap-2">
-                <span className="text-pink-400 mt-0.5">▸</span>
+                <span className="text-pink-400 mt-0.5">-</span>
                 <span>Use a clear, noise-free reference audio for best results.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-pink-400 mt-0.5">▸</span>
+                <span className="text-pink-400 mt-0.5">-</span>
                 <span>5–30 seconds of reference audio works best.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-pink-400 mt-0.5">▸</span>
+                <span className="text-pink-400 mt-0.5">-</span>
                 <span>Native-script text produces the most natural phonetics.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-pink-400 mt-0.5">▸</span>
+                <span className="text-pink-400 mt-0.5">-</span>
                 <span>Age and gender hints help shape the vocal style.</span>
               </li>
               {version === 2 && (
                 <li className="flex items-start gap-2">
-                  <span className="text-accent-400 mt-0.5">▸</span>
+                  <span className="text-accent-400 mt-0.5">-</span>
                   <span>Expression adds a vocal flair — tag is appended silently by the backend.</span>
                 </li>
               )}

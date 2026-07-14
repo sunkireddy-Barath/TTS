@@ -1,6 +1,6 @@
 import React from 'react'
 import { type AppVersion } from '../constants'
-import { Layers, Sparkles, Code2 } from 'lucide-react'
+import { Layers, Code2 } from 'lucide-react'
 
 interface VersionBadgeProps {
   version: AppVersion
@@ -10,19 +10,19 @@ interface VersionBadgeProps {
 const VERSION_CONFIG = [
   {
     v: 1 as AppVersion,
-    icon: <Layers size={13} />,
+    icon: null,
     label: 'V1',
     desc: 'Basic',
   },
   {
     v: 2 as AppVersion,
-    icon: <Sparkles size={13} />,
+    icon: null,
     label: 'V2',
     desc: 'Expressions',
   },
   {
     v: 3 as AppVersion,
-    icon: <Code2 size={13} />,
+    icon: null,
     label: 'V3',
     desc: 'Advanced',
   },
@@ -49,7 +49,6 @@ const VersionSwitcher: React.FC<VersionBadgeProps> = ({ version, onChange }) => 
             `}
             title={desc}
           >
-            {icon}
             <span>{label}</span>
           </button>
         )

@@ -5,26 +5,27 @@ Orchestrates the Cross-Lingual Voice Cloning pipeline using the real OmniVoice A
 Architecture (correct for OmniVoice):
     reference audio + target text
         ↓
-    Expression Engine → inject [expression-tag] into text
+    Expression Engine → inject [expression-tag] into text   (V2 global, V3 inline)
         ↓
-    Emotion Engine → speed (only speed applies in cloning mode)
+    Tag Parser → split into TextSegment list
         ↓
-    Tag Parser (V3: strip <emotion> tags from text)
+    For each segment:
+      ├─ is_expression_segment=True  → speed=1.0, no instruct (clone mode never uses instruct)
+      └─ is_expression_segment=False → speed from EmotionEngine.resolve()
         ↓
-    OmniVoice model.generate(
-        text=...,
-        ref_audio="path.wav",
-        ref_text=...,   # optional — Whisper auto-transcribes if omitted
-        speed=...,
-        num_step=...,
-    )
+    OmniVoice model.generate(text=..., ref_audio=..., speed=..., num_step=...)
         ↓
-    Audio WAV bytes
+    Concatenate segments → Audio WAV bytes
 
 Version behaviour:
-  V1 — emotion speed only, no expression
-  V2 — emotion speed + expression tag injected silently in text
-  V3 — any <emotion> tags stripped from text before cloning
+  V1 — emotion speed only, no expression, all inline tags stripped
+  V2 — emotion speed + expression tag injected globally at punctuation boundaries
+  V3 — inline <emotion> tags + inline expression tags processed natively
+
+Key stability rule (same as voice_design.py):
+    Expression segments (is_expression_segment=True) MUST use speed=1.0.
+    The diffusion model self-paces expression tokens; forcing a slow/fast speed
+    causes blank or noisy output.
 
 Notes
 -----
@@ -36,6 +37,7 @@ Notes
 """
 
 import io
+import re
 import random
 import numpy as np
 import soundfile as sf
@@ -65,7 +67,6 @@ class VoiceCloneService:
     #  Public API                                                          #
     # ------------------------------------------------------------------ #
 
-
     def generate(
         self,
         text: str,
@@ -87,31 +88,33 @@ class VoiceCloneService:
         text                  : Text in the target language.
         target_language       : Frontend language code (e.g. 'ta', 'fr').
         reference_audio_bytes : Raw bytes of reference WAV / MP3 / OGG / FLAC.
-        gender                : Target gender to pitch shift the audio (DSP shift).
-        age                   : Age hint.
-        emotion               : Emotion label → mapped to speed adjustment.
-        expression            : Expression label. Always 'none' for V1.
+        gender                : Hint only — clone mode does not change pitch via instruct.
+        age                   : Age hint — used for speed scaling on speech segments.
+        emotion               : Emotion label → mapped to speed on speech segments.
+        expression            : Expression label. Ignored for V1.
         version               : 1 | 2 | 3.
-        ref_text              : Transcription of the reference audio.
-                                Optional — OmniVoice auto-transcribes via Whisper if "".
+        ref_text              : Transcription of the reference audio (optional).
         num_step              : OmniVoice diffusion steps.
 
         Returns
         -------
         bytes : WAV bytes at 24 kHz mono PCM-16.
         """
-        # Clean noisy uploaded audio
+        # Enhance/clean the reference audio first
         reference_audio_bytes = apply_mossformer_enhancement(reference_audio_bytes)
 
         if version == 1:
-            # V1: Emotion dropdown only. Strip all inline tags and ignore expression dropdown.
+            # V1: emotion speed only — strip all inline tags, ignore expression.
             final_text = TagParser.strip_all_tags(text)
+
         elif version == 2:
-            # V2: Emotion dropdown + Expression dropdown. Strip inline tags, inject global expression.
+            # V2: strip inline tags, then inject the dropdown expression globally.
             final_text = TagParser.strip_all_tags(text)
             final_text = ExpressionEngine.inject_tag(final_text, expression)
+
         else:
-            # V3: Emotion tags + Expression tags in inline text.
+            # V3: keep inline emotion + expression tags as-is.
+            # If a global expression was also selected, inject it too.
             final_text = text
             if expression and expression.lower() != "none":
                 final_text = ExpressionEngine.inject_tag(final_text, expression)
@@ -126,8 +129,12 @@ class VoiceCloneService:
             num_step=num_step,
         )
 
-        # Apply MossFormer2 to the generated output to remove trailing silence and gentle hiss
+        # MossFormer2 post-processing on the generated output
         return apply_mossformer_enhancement(out_bytes, force_process=True)
+
+    # ------------------------------------------------------------------ #
+    #  Internal: multi-segment cloning                                     #
+    # ------------------------------------------------------------------ #
 
     def _generate_multi_segment(
         self,
@@ -138,100 +145,108 @@ class VoiceCloneService:
         fallback_emotion: str,
         ref_text: str,
         num_step: int,
+        max_attempts: int = 5,
     ) -> bytes:
         """
-        parse <emotion> blocks → synthesise each with its emotion speed mapped
+        Parse <emotion> blocks → synthesise each with its own speed
         → concatenate with 200 ms silence between segments.
-        Expression tags are preserved strictly inline.
+
+        CRITICAL:
+            Segments where is_expression_segment=True are given speed=1.0.
+            Expression tokens self-pace; forcing a non-neutral speed causes
+            the diffusion model to generate blank or noisy audio.
+            Clone mode never uses instruct, so that is always "".
         """
-        segments = TagParser.parse(text, default_emotion=fallback_emotion)
+        segments   = TagParser.parse(text, default_emotion=fallback_emotion)
         audio_parts: list[np.ndarray] = []
 
         # Fix seed to ensure voice stability across segments
         request_seed = random.randint(1, 999999)
 
         for idx, seg in enumerate(segments):
-            is_last = (idx == len(segments) - 1)
+            is_last  = (idx == len(segments) - 1)
+            seg_text = seg.text.strip()
 
-            # Resolve emotion per segment
-            params = EmotionEngine.resolve(seg.emotion, gender, age)
-            # BUG FIX: Voice cloning mode does NOT support the 'instruct' parameter. 
-            seg_text = seg.text
-            
-            # STABILITY FIX: If the segment contains NO letters or numbers (e.g. it is just ","),
-            # skip it. Generating pure punctuation crashes the diffusion model into static noise.
-            import re
-            if not re.search(r'[^\W_]', seg_text) and not re.search(r'\[[a-z-]+\]', seg_text):
+            # Skip empty or punctuation-only segments
+            if not seg_text:
                 continue
-                
+            if not re.search(r'[\w\u0080-\uFFFF\[]', seg_text):
+                continue
+
+            # ── Speed selection ───────────────────────────────────────────
+            if seg.is_expression_segment:
+                # Expression token: neutral speed so the token self-paces.
+                speed = 1.0
+            else:
+                # Normal speech: emotion → speed mapping.
+                params = EmotionEngine.resolve(seg.emotion, gender, age)
+                speed  = params.speed
+
+            # Clone mode NEVER uses instruct.
             instruct = ""
 
-            tags_to_verify = []
-            if "[laughter]" in seg_text.lower(): tags_to_verify.append("[laughter]")
-            if "[sigh]" in seg_text.lower(): tags_to_verify.append("[sigh]")
-            if "[surprise" in seg_text.lower() or "gasp" in seg_text.lower(): tags_to_verify.append("[surprise]")
-            if "[dissatisfaction" in seg_text.lower(): tags_to_verify.append("[dissatisfaction-hnn]")
-            if "[question" in seg_text.lower(): tags_to_verify.append("[question-en]")
-            if "[confirmation" in seg_text.lower(): tags_to_verify.append("[confirmation-en]")
-
+            # ── Generate with retry ───────────────────────────────────────
             best_wav_bytes = None
-            best_score = -1.0
-            is_valid = False
-            max_attempts = 4
+            is_valid       = False
 
             for attempt in range(max_attempts):
+                seed_val = request_seed + attempt
+                random.seed(seed_val)
+                np.random.seed(seed_val)
+                torch.manual_seed(seed_val)
+                if torch.cuda.is_available():
+                    torch.cuda.manual_seed_all(seed_val)
+
                 if attempt > 0:
-                    print(f" Expression not detected in cloned segment {idx+1}. Retrying (Attempt {attempt+1}/{max_attempts})...")
-                    random.seed(request_seed + attempt)
-                    np.random.seed(request_seed + attempt)
-                    torch.manual_seed(request_seed + attempt)
-                    if torch.cuda.is_available():
-                        torch.cuda.manual_seed_all(request_seed + attempt)
-                else:
-                    random.seed(request_seed)
-                    np.random.seed(request_seed)
-                    torch.manual_seed(request_seed)
-                    if torch.cuda.is_available():
-                        torch.cuda.manual_seed_all(request_seed)
+                    print(f"  [VC] Segment {idx+1} retry {attempt+1}/{max_attempts} "
+                          f"(expr={seg.is_expression_segment}) …")
 
-                wav_bytes = self.engine.synthesize_voice_clone(
-                    text=seg_text,
-                    reference_audio_bytes=reference_audio_bytes,
-                    ref_text=ref_text,
-                    speed=params.speed,
-                    num_step=num_step,
-                    instruct=instruct,
-                )
+                try:
+                    wav_bytes = self.engine.synthesize_voice_clone(
+                        text=seg_text,
+                        reference_audio_bytes=reference_audio_bytes,
+                        ref_text=ref_text,
+                        speed=speed,
+                        num_step=num_step,
+                        instruct=instruct,
+                    )
+                    is_valid       = True
+                    best_wav_bytes = wav_bytes
+                    break
+                except ValueError as ve:
+                    # engine raises ValueError on blank/noisy audio — retry
+                    print(f"  [VC] Segment {idx+1} attempt {attempt+1} failed: {ve}")
+                except Exception as exc:
+                    print(f"  [VC] Segment {idx+1} unexpected error: {exc}")
+                    break   # non-retryable
 
-                # OmniVoice engine internally retries on blank audio (RMS) or pure static (ZCR).
-                # If it returns wav_bytes without ValueError, it is a valid generation.
-                is_valid = True
-                best_wav_bytes = wav_bytes
-                break
-            
-            if not is_valid:
-                print(f" Exhausted attempts for cloned segment {idx+1}. Using best scored chunk ({best_score:.4f}).")
+            if not is_valid or best_wav_bytes is None:
+                print(f"  [VC] Segment {idx+1} — all attempts failed, skipping.")
+                continue
 
-            arr, _ = sf.read(io.BytesIO(best_wav_bytes))
-            arr = arr.astype(np.float32)
+            try:
+                arr, _ = sf.read(io.BytesIO(best_wav_bytes))
+                arr = arr.astype(np.float32)
+            except Exception as e:
+                print(f"  [VC] Segment {idx+1} — could not decode WAV: {e}")
+                continue
 
-            # Apply 10ms fade-in/out to prevent audio clicking/popping at boundaries
+            # 10 ms fade-in/out to prevent clicks at segment boundaries
             fade_len = int(SAMPLE_RATE * 0.01)
             if len(arr) > fade_len * 2:
-                fade_in = np.linspace(0.0, 1.0, fade_len, dtype=np.float32)
+                fade_in  = np.linspace(0.0, 1.0, fade_len, dtype=np.float32)
                 fade_out = np.linspace(1.0, 0.0, fade_len, dtype=np.float32)
-                arr[:fade_len] *= fade_in
+                arr[:fade_len]  *= fade_in
                 arr[-fade_len:] *= fade_out
 
             audio_parts.append(arr)
 
-            # 200 ms silence gap
+            # 200 ms silence gap between segments
             if not is_last:
-                silence = np.zeros(int(SAMPLE_RATE * 0.20), dtype=np.float32)
-                audio_parts.append(silence)
+                audio_parts.append(np.zeros(int(SAMPLE_RATE * 0.20), dtype=np.float32))
 
         if not audio_parts:
-            raise ValueError("No valid text segments found.")
+            raise ValueError("No valid text segments produced audio.")
 
         combined = np.concatenate(audio_parts)
         buf = io.BytesIO()

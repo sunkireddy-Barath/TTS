@@ -1,31 +1,13 @@
 import React from 'react'
 import { EXPRESSIONS } from '../constants'
-import { Sparkles } from 'lucide-react'
+
 
 interface ExpressionPickerProps {
   value: string
   onChange: (val: string) => void
 }
 
-const EXPRESSION_ICONS: Record<string, string> = {
-  none:            '—',
-  giggle:          '😄',
-  laughter:        '😂',
-  sigh:            '😮‍💨',
-  question:        '❓',
-  question_en:     '❓',
-  question_ah:     '❓',
-  question_oh:     '❓',
-  question_ei:     '❓',
-  question_yi:     '❓',
-  surprise:        '😲',
-  surprise_ah:     '😲',
-  surprise_oh:     '😲',
-  surprise_wa:     '😲',
-  surprise_yo:     '😲',
-  dissatisfaction: '😤',
-  confirmation:    '✅',
-}
+
 
 const ExpressionPicker: React.FC<ExpressionPickerProps> = ({
   value,
@@ -34,7 +16,6 @@ const ExpressionPicker: React.FC<ExpressionPickerProps> = ({
   return (
     <div>
       <label className="field-label flex items-center gap-1.5">
-        <Sparkles size={11} className="text-accent-400" />
         Expression
         <span className="ml-auto text-slate-600 normal-case tracking-normal font-normal text-xs">
           (appended automatically)
@@ -58,8 +39,7 @@ const ExpressionPicker: React.FC<ExpressionPickerProps> = ({
                 }
               `}
             >
-              <span>{EXPRESSION_ICONS[expr.value] ?? '▸'}</span>
-              {expr.label}
+              <span className="px-1">{expr.label}</span>
             </button>
           )
         })}

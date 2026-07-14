@@ -6,7 +6,7 @@
 
 | Feature | Description |
 |---|---|
-| 🎨 Voice Design | Generate speech with language, gender, age, emotion controls |
+|  Voice Design | Generate speech with language, gender, age, emotion controls |
 | Cross-Lingual Cloning | Clone any voice across 100+ languages |
 | Emotion Engine | 10 emotions mapped to pitch/energy/style — invisible to users |
 | ✨ Expression Engine | Giggle, Sigh, Question, Surprise, Dissatisfaction — auto-injected tags |

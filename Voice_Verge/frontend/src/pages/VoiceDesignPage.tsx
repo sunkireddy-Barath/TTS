@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Wand2, AlertCircle, Loader2, Info, Code2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { type AppVersion } from '../constants'
 import { generateVoiceDesign } from '../api'
 import LanguageSelector from '../components/LanguageSelector'
@@ -98,7 +98,7 @@ const VoiceDesignPage: React.FC = () => {
             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #3b64f8, #8b5cf6)' }}
           >
-            <Wand2 size={20} className="text-white" />
+            <span className="text-white font-bold text-xl">VD</span>
           </div>
           <h1 className="font-display text-3xl font-bold text-gradient">
             Voice Design
@@ -145,7 +145,7 @@ const VoiceDesignPage: React.FC = () => {
             {version === 3 && (
               <div className="mt-3 space-y-2">
                 <div className="flex items-start gap-2 text-xs text-slate-500">
-                  <Info size={12} className="mt-0.5 flex-shrink-0 text-brand-400" />
+                  <span className="mt-0.5 flex-shrink-0 text-brand-400 font-bold">i</span>
                   <span>
                     Emotion tags: wrap each section in{' '}
                     <code className="text-accent-400 bg-accent-500/10 px-1 rounded">&lt;emotion&gt;…&lt;/emotion&gt;</code>.
@@ -153,7 +153,7 @@ const VoiceDesignPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-start gap-2 text-xs text-slate-500">
-                  <Code2 size={12} className="mt-0.5 flex-shrink-0 text-accent-400" />
+                  <span className="mt-0.5 flex-shrink-0 text-accent-400 font-bold">&lt;/&gt;</span>
                   <div>
                     <span className="text-slate-400">Expression tags (write directly in text):</span>
                     <div className="flex flex-wrap gap-1 mt-1">
@@ -208,7 +208,7 @@ const VoiceDesignPage: React.FC = () => {
           {/* Error */}
           {error && (
             <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/30 bg-red-500/10 animate-slide-up">
-              <AlertCircle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
+              <span className="text-red-400 mt-0.5 flex-shrink-0 font-bold">!</span>
               <p className="text-sm text-red-300">{error}</p>
             </div>
           )}
@@ -228,7 +228,6 @@ const VoiceDesignPage: React.FC = () => {
               </>
             ) : (
               <>
-                <Wand2 size={18} />
                 Generate Speech
               </>
             )}
@@ -285,26 +284,26 @@ const VoiceDesignPage: React.FC = () => {
             <p className="field-label mb-3">Quick Tips</p>
             <ul className="space-y-2 text-xs text-slate-400">
               <li className="flex items-start gap-2">
-                <span className="text-brand-400 mt-0.5">▸</span>
+                <span className="text-brand-400 mt-0.5">-</span>
                 <span>Use punctuation for natural pauses and intonation.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-brand-400 mt-0.5">▸</span>
+                <span className="text-brand-400 mt-0.5">-</span>
                 <span>Shorter texts generate faster. Split long content into sections.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-brand-400 mt-0.5">▸</span>
+                <span className="text-brand-400 mt-0.5">-</span>
                 <span>Try different age values for character variety.</span>
               </li>
               {version === 2 && (
                 <li className="flex items-start gap-2">
-                  <span className="text-accent-400 mt-0.5">▸</span>
+                  <span className="text-accent-400 mt-0.5">-</span>
                   <span>Pick an Expression to add natural vocal flair — tags are injected automatically.</span>
                 </li>
               )}
               {version === 3 && (
                 <li className="flex items-start gap-2">
-                  <span className="text-accent-400 mt-0.5">▸</span>
+                  <span className="text-accent-400 mt-0.5">-</span>
                   <span>Wrap sentences in emotion tags for per-sentence emotion control and mixed audio.</span>
                 </li>
               )}

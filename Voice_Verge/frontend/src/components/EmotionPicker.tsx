@@ -30,8 +30,7 @@ const EmotionPicker: React.FC<EmotionPickerProps> = ({ value, onChange }) => {
               `}
               style={isActive ? { boxShadow: `0 0 16px ${emotion.color}40` } : {}}
             >
-              <span className="text-lg leading-none">{emotion.emoji}</span>
-              <span className="leading-none truncate w-full text-center">
+              <span className="leading-none truncate w-full text-center py-2">
                 {emotion.label}
               </span>
             </button>

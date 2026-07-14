@@ -158,16 +158,16 @@ export interface EmotionOption {
 }
 
 export const EMOTIONS: EmotionOption[] = [
-  { value: 'neutral',    label: 'Neutral',    emoji: '😐', color: '#64748b' },
-  { value: 'happy',      label: 'Happy',      emoji: '😊', color: '#eab308' },
-  { value: 'excited',    label: 'Excited',    emoji: '🤩', color: '#f97316' },
-  { value: 'sad',        label: 'Sad',        emoji: '😢', color: '#3b82f6' },
-  { value: 'angry',      label: 'Angry',      emoji: '😠', color: '#ef4444' },
-  { value: 'calm',       label: 'Calm',       emoji: '😌', color: '#10b981' },
-  { value: 'whisper',    label: 'Whisper',    emoji: '🤫', color: '#8b5cf6' },
-  { value: 'fearful',    label: 'Fearful',    emoji: '😨', color: '#6366f1' },
-  { value: 'surprised',  label: 'Surprised',  emoji: '😲', color: '#ec4899' },
-  { value: 'disgusted',  label: 'Disgusted',  emoji: '🤢', color: '#84cc16' },
+  { value: 'neutral',    label: 'Neutral',    emoji: '', color: '#64748b' },
+  { value: 'happy',      label: 'Happy',      emoji: '', color: '#eab308' },
+  { value: 'excited',    label: 'Excited',    emoji: '', color: '#f97316' },
+  { value: 'sad',        label: 'Sad',        emoji: '', color: '#3b82f6' },
+  { value: 'angry',      label: 'Angry',      emoji: '', color: '#ef4444' },
+  { value: 'calm',       label: 'Calm',       emoji: '', color: '#10b981' },
+  { value: 'whisper',    label: 'Whisper',    emoji: '', color: '#8b5cf6' },
+  { value: 'fearful',    label: 'Fearful',    emoji: '', color: '#6366f1' },
+  { value: 'surprised',  label: 'Surprised',  emoji: '', color: '#ec4899' },
+  { value: 'disgusted',  label: 'Disgusted',  emoji: '', color: '#84cc16' },
 ]
 
 // ─── Expression options (v2) ──────────────────────────────────────────────────
@@ -178,22 +178,19 @@ export interface ExpressionOption {
 
 export const EXPRESSIONS: ExpressionOption[] = [
   { value: 'none',            label: 'None' },
-  { value: 'giggle',          label: 'Giggle' },
-  { value: 'laughter',        label: 'Laughter' },
-  { value: 'sigh',            label: 'Sigh' },
-  { value: 'question',        label: 'Question' },
-  { value: 'question_en',     label: 'Question (en)' },
-  { value: 'question_ah',     label: 'Question (ah)' },
-  { value: 'question_oh',     label: 'Question (oh)' },
-  { value: 'question_ei',     label: 'Question (ei)' },
-  { value: 'question_yi',     label: 'Question (yi)' },
-  { value: 'surprise',        label: 'Surprise' },
-  { value: 'surprise_ah',     label: 'Surprise (ah)' },
-  { value: 'surprise_oh',     label: 'Surprise (oh)' },
-  { value: 'surprise_wa',     label: 'Surprise (wa)' },
-  { value: 'surprise_yo',     label: 'Surprise (yo)' },
-  { value: 'dissatisfaction', label: 'Dissatisfaction' },
-  { value: 'confirmation',    label: 'Confirmation' },
+  { value: 'laughter',        label: '[laughter]' },
+  { value: 'sigh',            label: '[sigh]' },
+  { value: 'question_en',     label: '[question-en]' },
+  { value: 'question_ah',     label: '[question-ah]' },
+  { value: 'question_oh',     label: '[question-oh]' },
+  { value: 'question_ei',     label: '[question-ei]' },
+  { value: 'question_yi',     label: '[question-yi]' },
+  { value: 'surprise_ah',     label: '[surprise-ah]' },
+  { value: 'surprise_oh',     label: '[surprise-oh]' },
+  { value: 'surprise_wa',     label: '[surprise-wa]' },
+  { value: 'surprise_yo',     label: '[surprise-yo]' },
+  { value: 'dissatisfaction', label: '[dissatisfaction-hnn]' },
+  { value: 'confirmation',    label: '[confirmation-en]' },
 ]
 
 // ─── Gender options ───────────────────────────────────────────────────────────
@@ -204,9 +201,9 @@ export interface GenderOption {
 }
 
 export const GENDERS: GenderOption[] = [
-  { value: 'male',    label: 'Male',    icon: '♂' },
-  { value: 'female',  label: 'Female',  icon: '♀' },
-  { value: 'neutral', label: 'Neutral', icon: '⚬' },
+  { value: 'male',    label: 'Male',    icon: '' },
+  { value: 'female',  label: 'Female',  icon: '' },
+  { value: 'neutral', label: 'Neutral', icon: '' },
 ]
 
 // ─── App version ──────────────────────────────────────────────────────────────
