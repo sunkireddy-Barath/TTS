@@ -1,11 +1,21 @@
 # Cell 1: Environment Setup
 import sys, os, subprocess
 
-# 1. Clone GitHub Repository
-if not os.path.exists('/content/TTS'):
-  print("Cloning repository...")
+# 1. Mount Google Drive
+try:
+  from google.colab import drive
+  drive.mount('/content/drive')
+except ImportError:
+  print("Not running in Colab. Skipping Drive mount.")
+
+DRIVE_ROOT = '/content/drive/MyDrive/TTS'
+
+# 2. Clone GitHub Repository to Google Drive
+if not os.path.exists(DRIVE_ROOT):
+  print(f"Cloning repository into Google Drive ({DRIVE_ROOT})...")
+  os.makedirs(os.path.dirname(DRIVE_ROOT), exist_ok=True)
   result = subprocess.run(
-    ['git', 'clone', 'https://github.com/sunkireddy-Barath/TTS.git', '/content/TTS'],
+    ['git', 'clone', 'https://github.com/sunkireddy-Barath/TTS.git', DRIVE_ROOT],
     capture_output=True, text=True
   )
   if result.returncode != 0:
@@ -13,10 +23,11 @@ if not os.path.exists('/content/TTS'):
     raise RuntimeError("Repository clone failed.")
   print("Repository cloned successfully.")
 else:
-  print("Repository already cloned.")
+  print("Repository found in Google Drive. Pulling latest updates...")
+  subprocess.run(['git', '-C', DRIVE_ROOT, 'pull'], capture_output=True, text=True)
 
-# 2. Locate Voice_Verge project folder
-DRIVE_PROJECT_PATH = '/content/TTS/Voice_Verge'
+# 3. Locate Voice_Verge project folder
+DRIVE_PROJECT_PATH = os.path.join(DRIVE_ROOT, 'Voice_Verge')
 
 if not os.path.isdir(DRIVE_PROJECT_PATH):
   raise FileNotFoundError(
@@ -29,11 +40,11 @@ BACKEND_DIR    = os.path.join(DRIVE_PROJECT_PATH, 'backend')
 CHECKPOINT_DIR = os.path.join(DRIVE_PROJECT_PATH, 'checkpoints')
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 
-# 3. Add backend to Python path
+# 4. Add backend to Python path
 if BACKEND_DIR not in sys.path:
   sys.path.insert(0, BACKEND_DIR)
 
-# 4. Environment variables
+# 5. Environment variables
 os.environ['HF_HOME']         = CHECKPOINT_DIR
 os.environ['PORT']            = '8000'
 os.environ['ALLOWED_ORIGINS'] = '*'
