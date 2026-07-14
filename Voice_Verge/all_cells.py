@@ -207,6 +207,16 @@ os.environ['HF_HUB_ENABLE_HF_TRANSFER'] = '1'
 subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'hf_transfer'], check=True)
 print('hf_transfer enabled (faster parallel download)')
 
+# Attempt to load HF_TOKEN from Colab Secrets to prevent rate limiting
+try:
+  from google.colab import userdata
+  hf_token = userdata.get('HF_TOKEN')
+  if hf_token:
+    os.environ['HF_TOKEN'] = hf_token
+    print('✅ HF_TOKEN applied from Colab Secrets (Bypassing rate limits)')
+except Exception:
+  print('⚠️ No HF_TOKEN found in Colab Secrets. You may experience slow downloads.')
+
 from huggingface_hub import snapshot_download
 
 MODEL_ID       = 'k2-fsa/OmniVoice'
