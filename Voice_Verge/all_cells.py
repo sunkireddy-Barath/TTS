@@ -136,7 +136,7 @@ import subprocess, sys, os
 import warnings
 warnings.filterwarnings('ignore', category=SyntaxWarning)
 
-BACKEND_DIR = '/content/TTS/Voice_Verge/backend'
+BACKEND_DIR = '/content/drive/MyDrive/TTS/Voice_Verge/backend'
 if BACKEND_DIR not in sys.path:
   sys.path.insert(0, BACKEND_DIR)
 
@@ -231,7 +231,7 @@ except Exception:
 from huggingface_hub import snapshot_download
 
 MODEL_ID       = 'k2-fsa/OmniVoice'
-CHECKPOINT_DIR = '/content/TTS/Voice_Verge/checkpoints'
+CHECKPOINT_DIR = '/content/drive/MyDrive/TTS/Voice_Verge/checkpoints'
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 os.environ['HF_HOME'] = CHECKPOINT_DIR
 
@@ -285,8 +285,8 @@ print('\nCell 4 complete.')
 # Cell 5: Load OmniVoice Model
 import sys, os, time, torch
 
-BACKEND_DIR    = '/content/TTS/Voice_Verge/backend'
-CHECKPOINT_DIR = '/content/TTS/Voice_Verge/checkpoints'
+BACKEND_DIR    = '/content/drive/MyDrive/TTS/Voice_Verge/backend'
+CHECKPOINT_DIR = '/content/drive/MyDrive/TTS/Voice_Verge/checkpoints'
 if BACKEND_DIR not in sys.path:
   sys.path.insert(0, BACKEND_DIR)
 
@@ -342,7 +342,7 @@ import sys, os, io, time
 import soundfile as sf
 from IPython.display import Audio, display
 
-BACKEND_DIR = '/content/TTS/Voice_Verge/backend'
+BACKEND_DIR = '/content/drive/MyDrive/TTS/Voice_Verge/backend'
 if BACKEND_DIR not in sys.path:
   sys.path.insert(0, BACKEND_DIR)
 
@@ -561,7 +561,7 @@ print('\nCell 6 complete.\n')
 # Cell 7: Launch Backend (FastAPI + Cloudflare Tunnel)
 import sys, os, time, subprocess, threading, re, urllib.request
 
-BACKEND_DIR = '/content/TTS/Voice_Verge/backend'
+BACKEND_DIR = '/content/drive/MyDrive/TTS/Voice_Verge/backend'
 if BACKEND_DIR not in sys.path:
   sys.path.insert(0, BACKEND_DIR)
 
