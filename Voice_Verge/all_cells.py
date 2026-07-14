@@ -214,9 +214,9 @@ else:
 # Cell 4: Download OmniVoice Model
 import os, subprocess, sys
 
-os.environ['HF_HUB_ENABLE_HF_TRANSFER'] = '1'
-subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'hf_transfer'], check=True)
-print('hf_transfer enabled (faster parallel download)')
+# Note: We explicitly DISABLE hf_transfer here.
+# Highly concurrent writes to Google Drive cause the Colab filesystem to deadlock/freeze infinitely.
+os.environ['HF_HUB_ENABLE_HF_TRANSFER'] = '0'
 
 # Attempt to load HF_TOKEN from Colab Secrets to prevent rate limiting
 try:
@@ -241,7 +241,7 @@ if os.path.isdir(model_marker):
   print('Skipping download (delete the folder to force re-download).')
 else:
   print(f'\nDownloading {MODEL_ID} -> {CHECKPOINT_DIR}')
-  print('hf_transfer active -- 3-5x faster. May still take 5-15 minutes...\n')
+  print('Standard HuggingFace downloader active. This usually takes 5-15 minutes...\n')
   try:
     path = snapshot_download(
       repo_id=MODEL_ID,
@@ -256,25 +256,8 @@ else:
     print(f'\nModel downloaded: {path}')
     print(f'Total size: {total_gb:.2f} GB')
   except Exception as e:
-    print(f'\nhf_transfer failed or rate-limited: {e}')
-    print('Falling back to standard HuggingFace downloader (more stable)...')
-    os.environ['HF_HUB_ENABLE_HF_TRANSFER'] = '0'
-    try:
-      path = snapshot_download(
-        repo_id=MODEL_ID,
-        cache_dir=CHECKPOINT_DIR,
-        ignore_patterns=['*.msgpack', '*.h5', 'flax_model*', 'tf_model*'],
-      )
-      total_gb = sum(
-        os.path.getsize(os.path.join(dp, f))
-        for dp, _, files in os.walk(path)
-        for f in files
-      ) / 1e9
-      print(f'\nModel downloaded: {path}')
-      print(f'Total size: {total_gb:.2f} GB')
-    except Exception as e2:
-      print(f'\nDownload completely failed: {e2}')
-      raise
+    print(f'\nDownload failed: {e}')
+    raise
 
 print('\nCell 4 complete.')
 
